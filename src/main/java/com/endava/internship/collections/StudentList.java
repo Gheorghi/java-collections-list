@@ -1,23 +1,21 @@
 package com.endava.internship.collections;
 
-import lombok.ToString;
-
 import java.util.*;
 import java.util.function.Consumer;
 
-@ToString
-public class StudentList extends AbstractList<Student> implements List<Student> {
+public class StudentList implements List<Student> {
 
     private int sizeOfArray = 0;
-    private static int CAPACITY = 10;
-    private static Student[] elements = new Student[CAPACITY];
+    private static final int CAPACITY = 10;
+    private Student[] elements;
+    private int modificationCounter = 0;
 
     public StudentList() {
+        elements = new Student[CAPACITY];
     }
 
     public StudentList(int initialCapacity) {
-        CAPACITY = initialCapacity;
-        updateCapacity(elements, initialCapacity);
+        elements = new Student[initialCapacity];
     }
 
     public StudentList(Collection<? extends Student> studentsCollection) {
@@ -36,24 +34,12 @@ public class StudentList extends AbstractList<Student> implements List<Student> 
 
     @Override
     public boolean contains(Object o) {
-        return indexOf(o) != -1 ? true : false;
+        return indexOf(o) != -1;
     }
 
     @Override
     public Iterator<Student> iterator() {
-        return new Iterator<Student>() {
-            private int initial = 0;
-
-            @Override
-            public boolean hasNext() {
-                return elements.length > initial;
-            }
-
-            @Override
-            public Student next() {
-                return elements[initial++];
-            }
-        };
+        return new StudentItr();
     }
 
     @Override
@@ -62,28 +48,25 @@ public class StudentList extends AbstractList<Student> implements List<Student> 
     }
 
     @Override
-    public <T> T[] toArray(T[] ts) {
-        if (ts.length < size()) {
-            return (T[]) Arrays.copyOf(elements, size(), ts.getClass());
+    public <T> T[] toArray(final T[] input) {
+        if (input.length < size()) {
+            return (T[]) Arrays.copyOf(elements, size(), input.getClass());
         }
-        System.arraycopy(elements, 0, ts, 0, ts.length);
-        if (ts.length > size()) {
-            ts[size()] = null;
-        }
-        return ts;
+        System.arraycopy(elements, 0, input, 0, input.length);
+        return input;
     }
 
     @Override
-    public boolean add(Student student) {
+    public boolean add(final Student student) {
         checkCapacity();
         elements[sizeOfArray++] = student;
+        modificationCounter++;
         return true;
     }
 
     private void checkCapacity() {
-        if (elements.length == CAPACITY || elements.length > CAPACITY) {
-            CAPACITY = elements.length;
-            int capacity = CAPACITY + 10;
+        if (elements.length == size()) {
+            int capacity = elements.length * 2;
             updateCapacity(elements, capacity);
         }
     }
@@ -93,79 +76,66 @@ public class StudentList extends AbstractList<Student> implements List<Student> 
     }
 
     @Override
-    public boolean remove(Object o) {
-        int index = indexOf(o);
-        if (index != -1) {
-            System.arraycopy(elements, index + 1, elements, index, size() - index + 1);
-            sizeOfArray--;
+    public boolean remove(final Object o) {
+        try {
+            remove(indexOf(o));
             return true;
+        } catch (IndexOutOfBoundsException e) {
+            return false;
         }
-        return false;
     }
 
     @Override
     public void clear() {
-        for (int i = 0; i < size(); i++) {
-            elements[i] = null;
-        }
-        CAPACITY = 10;
+        modificationCounter++;
+        elements = new Student[CAPACITY];
         sizeOfArray = 0;
     }
 
     @Override
     public Student get(int i) {
-        checkTheExistanceOfIndex(i);
+        checkTheExistenceOfIndex(i);
         return elements[i];
     }
 
-    private boolean checkTheExistanceOfIndex(int index) {
+    private void checkTheExistenceOfIndex(int index) {
         if (size() <= index) {
             throw new IndexOutOfBoundsException("Array size: " + size() + " is less or equal to index: " + index);
         }
-        return true;
     }
 
-    private boolean checkIndex(int index) {
+    private void checkIndex(int index) {
         if (size() < index || index < 0) {
             throw new IndexOutOfBoundsException("Array size: " + size() + " less than index: " + index + " or index less than: 0");
         }
-        return true;
     }
 
     @Override
-    public Student set(int i, Student student) {
-        checkTheExistanceOfIndex(i);
+    public Student set(int i, final Student student) {
+        checkTheExistenceOfIndex(i);
         Student previous = elements[i];
         elements[i] = student;
+        modificationCounter++;
         return previous;
     }
 
     @Override
-    public void add(int i, Student student) {
-        if (checkIndex(i)) {
-            Student[] beforeIndex = Arrays.copyOfRange(elements, 0, i + 1);
-            Student[] afterIndex = Arrays.copyOfRange(elements, i, elements.length);
-            beforeIndex[i] = student;
-            sizeOfArray++;
-            mergeTheArray(beforeIndex, afterIndex, beforeIndex.length, afterIndex.length);
-
-        }
-    }
-
-    private void mergeTheArray(Student[] beforeIndex, Student[] afterIndex, int lengthOfBefore, int lengthOfAfter) {
-        elements = new Student[lengthOfBefore + lengthOfAfter];
-        System.arraycopy(beforeIndex, 0, elements, 0, lengthOfBefore);
-        System.arraycopy(afterIndex, 0, elements, lengthOfBefore, lengthOfAfter);
+    public void add(int i, final Student student) {
+        checkIndex(i);
+        System.arraycopy(elements, i, elements, i + 1,size() - i);
+        elements[i]=student;
+        sizeOfArray++;
+        modificationCounter++;
     }
 
     @Override
     public Student remove(int i) {
-        Student targerToRemove = null;
-        if (checkTheExistanceOfIndex(i)) {
-            targerToRemove = get(i);
-            remove(get(i));
-        }
-        return targerToRemove;
+        checkTheExistenceOfIndex(i);
+        Student targetToRemove = get(i);
+        System.arraycopy(elements, i + 1, elements, i, size() - i + 1);
+        sizeOfArray--;
+        modificationCounter++;
+        return targetToRemove;
     }
 
     @Override
@@ -221,7 +191,7 @@ public class StudentList extends AbstractList<Student> implements List<Student> 
         return Arrays.asList(Arrays.copyOfRange(elements, i, i1));
     }
 
-    static void subListRangeCheck(int from, int to, int arraySize) {
+    void subListRangeCheck(int from, int to, int arraySize) {
         if (to > arraySize)
             throw new IndexOutOfBoundsException("to is: " + to);
         if (from > to)
@@ -235,6 +205,7 @@ public class StudentList extends AbstractList<Student> implements List<Student> 
         int sizeOfCollection = collection.size();
         System.arraycopy(collection.toArray(), 0, elements, size(), sizeOfCollection);
         sizeOfArray += sizeOfCollection;
+        modificationCounter++;
         return sizeOfCollection > 0;
     }
 
@@ -264,6 +235,7 @@ public class StudentList extends AbstractList<Student> implements List<Student> 
 
     private class StudentItr implements ListIterator<Student> {
         int cursor = 0;
+        int expectedModifCounter = modificationCounter;
 
         public StudentItr(int index) {
             cursor = index;
@@ -274,24 +246,44 @@ public class StudentList extends AbstractList<Student> implements List<Student> 
 
         @Override
         public boolean hasNext() {
-            return checkIndex(cursor + 1);
+            try {
+                checkIndex(cursor + 1);
+                return true;
+            } catch (IndexOutOfBoundsException e) {
+                return false;
+            }
         }
 
         @Override
         public Student next() {
-            hasNext();
-            return elements[cursor + 1];
+            checkIfNoActionsMade();
+            try {
+                hasNext();
+                return elements[cursor + 1];
+            } catch (IndexOutOfBoundsException e) {
+                throw new NoSuchElementException();
+            }
         }
 
         @Override
         public boolean hasPrevious() {
-            return checkIndex(cursor - 1);
+            try {
+                checkIndex(cursor - 1);
+                return true;
+            } catch (IndexOutOfBoundsException e) {
+                return false;
+            }
         }
 
         @Override
         public Student previous() {
-            hasPrevious();
-            return elements[cursor - 1];
+            checkIfNoActionsMade();
+            try {
+                hasPrevious();
+                return elements[cursor - 1];
+            } catch (IndexOutOfBoundsException e) {
+                throw new NoSuchElementException();
+            }
         }
 
         @Override
@@ -308,7 +300,13 @@ public class StudentList extends AbstractList<Student> implements List<Student> 
 
         @Override
         public void remove() {
-            StudentList.this.remove(cursor);
+            checkIfNoActionsMade();
+            try {
+                StudentList.this.remove(cursor);
+                expectedModifCounter = modificationCounter;
+            } catch (IndexOutOfBoundsException e) {
+                throw new ConcurrentModificationException();
+            }
         }
 
         @Override
@@ -318,12 +316,23 @@ public class StudentList extends AbstractList<Student> implements List<Student> 
 
         @Override
         public void set(Student student) {
+            checkIfNoActionsMade();
             StudentList.this.set(cursor, student);
+            expectedModifCounter = modificationCounter;
+            checkIfNoActionsMade();
         }
 
         @Override
         public void add(Student student) {
+            checkIfNoActionsMade();
             StudentList.this.add(cursor, student);
+            expectedModifCounter = modificationCounter;
+            checkIfNoActionsMade();
+        }
+
+        final void checkIfNoActionsMade() {
+            if (modificationCounter != expectedModifCounter)
+                throw new ConcurrentModificationException();
         }
     }
 }
