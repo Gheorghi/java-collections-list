@@ -1,27 +1,22 @@
 package com.endava.internship.collections;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.ToString;
+
 import java.time.LocalDate;
 
 /**
  * The class that defines the element that will be contained by your collection
  */
+@Getter
+@AllArgsConstructor
+@ToString
 public class Student //TODO consider implementing any interfaces necessary for your collection
 {
     private String name;
     private LocalDate dateOfBirth;
     private String details;
-
-    public Student(String name, LocalDate dateOfBirth, String details) {
-        this.name = name;
-        this.dateOfBirth = dateOfBirth;
-        this.details = details;
-    }
-
-    public String getName() { return name; }
-
-    public LocalDate getDateOfBirth() { return dateOfBirth; }
-
-    public String getDetails() { return details; }
 
     /*
     TODO consider overriding any methods for this object to function properly within a collection:
