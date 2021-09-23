@@ -19,6 +19,7 @@ public class StudentList implements List<Student> {
     }
 
     public StudentList(Collection<? extends Student> studentsCollection) {
+        elements = new Student[sizeOfArray + studentsCollection.size()];
         addAll(studentsCollection);
     }
 
@@ -67,12 +68,12 @@ public class StudentList implements List<Student> {
     private void checkCapacity() {
         if (elements.length == size()) {
             int capacity = elements.length * 2;
-            updateCapacity(elements, capacity);
+            updateCapacity(capacity);
         }
     }
 
-    private void updateCapacity(Student[] students, int newSize) {
-        elements = Arrays.copyOf(students, newSize);
+    private void updateCapacity(int newSize) {
+        elements = Arrays.copyOf(elements, newSize);
     }
 
     @Override
@@ -122,8 +123,9 @@ public class StudentList implements List<Student> {
     @Override
     public void add(int i, final Student student) {
         checkIndex(i);
-        System.arraycopy(elements, i, elements, i + 1,size() - i);
-        elements[i]=student;
+        checkCapacity();
+        System.arraycopy(elements, i, elements, i + 1, size() - i);
+        elements[i] = student;
         sizeOfArray++;
         modificationCounter++;
     }
@@ -132,7 +134,7 @@ public class StudentList implements List<Student> {
     public Student remove(int i) {
         checkTheExistenceOfIndex(i);
         Student targetToRemove = get(i);
-        System.arraycopy(elements, i + 1, elements, i, size() - i + 1);
+        System.arraycopy(elements, i + 1, elements, i, size() - i - 1);
         sizeOfArray--;
         modificationCounter++;
         return targetToRemove;
@@ -191,7 +193,7 @@ public class StudentList implements List<Student> {
         return Arrays.asList(Arrays.copyOfRange(elements, i, i1));
     }
 
-    void subListRangeCheck(int from, int to, int arraySize) {
+    private void subListRangeCheck(int from, int to, int arraySize) {
         if (to > arraySize)
             throw new IndexOutOfBoundsException("to is: " + to);
         if (from > to)
