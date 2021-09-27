@@ -213,26 +213,53 @@ public class StudentList implements List<Student> {
 
     @Override
     public boolean containsAll(Collection<?> collection) {
-        //Ignore this for homework
-        throw new UnsupportedOperationException();
+        for (Object e : collection)
+            if (!contains(e)) {
+                return false;
+            }
+        return true;
     }
 
     @Override
     public boolean addAll(int i, Collection<? extends Student> collection) {
-        //Ignore this for homework
-        throw new UnsupportedOperationException();
+        int counter = 0;
+        Iterator<? extends Student> it = collection.iterator();
+        while (it.hasNext()) {
+            Student student = it.next();
+            add(i + counter++, student);
+        }
+        return counter != 0;
     }
 
     @Override
     public boolean removeAll(Collection<?> collection) {
-        //Ignore this for homework
-        throw new UnsupportedOperationException();
+        Objects.requireNonNull(collection);
+        Iterator<?> it = collection.iterator();
+        while (it.hasNext()) {
+            Object student = it.next();
+            remove(student);
+        }
+        return !containsAll(collection);
     }
 
     @Override
     public boolean retainAll(Collection<?> collection) {
-        //Ignore this for homework
-        throw new UnsupportedOperationException();
+        Objects.requireNonNull(collection);
+        Iterator<?> it = collection.iterator();
+        Student[] iteratorsList = (Student[]) collection.toArray();
+
+        while (it.hasNext()) {
+            Student student = (Student) it.next();
+            for (Student st : elements) {
+                try {
+                    if (!st.equals(student) && Arrays.stream(iteratorsList).noneMatch(e -> e.equals(st))) {
+                        remove(st);
+                    }
+                } catch (NullPointerException e) {
+                }
+            }
+        }
+        return iteratorsList.length == size();
     }
 
     private class StudentItr implements ListIterator<Student> {
@@ -261,7 +288,8 @@ public class StudentList implements List<Student> {
             checkIfNoActionsMade();
             try {
                 hasNext();
-                return elements[cursor + 1];
+                ++cursor;
+                return elements[cursor];
             } catch (IndexOutOfBoundsException e) {
                 throw new NoSuchElementException();
             }
@@ -282,7 +310,8 @@ public class StudentList implements List<Student> {
             checkIfNoActionsMade();
             try {
                 hasPrevious();
-                return elements[cursor - 1];
+                --cursor;
+                return elements[cursor];
             } catch (IndexOutOfBoundsException e) {
                 throw new NoSuchElementException();
             }
