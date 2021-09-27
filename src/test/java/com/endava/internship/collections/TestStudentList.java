@@ -74,15 +74,6 @@ class TestStudentList {
         };
     }
 
-
-    private static int[] getIndexes() {
-        int[] indexes = new int[listOfStudents().size()];
-        for (int i = 0; i < students_List.size(); i++) {
-            indexes[i] = i;
-        }
-        return indexes;
-    }
-
     private static <T> List<Student> listOfStudents() {
         return Arrays.asList(student1, student2, student3, student4, student5, student6, student7, student8, student9, student10, student11, student12);
     }
