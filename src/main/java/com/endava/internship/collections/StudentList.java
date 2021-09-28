@@ -1,7 +1,15 @@
 package com.endava.internship.collections;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class StudentList implements List<Student> {
 
@@ -134,8 +142,13 @@ public class StudentList implements List<Student> {
     public Student remove(int i) {
         checkTheExistenceOfIndex(i);
         Student targetToRemove = get(i);
-        System.arraycopy(elements, i + 1, elements, i, size() - i - 1);
-        sizeOfArray--;
+
+        int numToShift = sizeOfArray - i - 1;
+        if (numToShift > 0) {
+            System.arraycopy(elements, i + 1, elements, i, numToShift);
+        }
+        elements[--sizeOfArray] = null;
+        elements = removeNullsFromArray(elements);
         modificationCounter++;
         return targetToRemove;
     }
@@ -221,14 +234,25 @@ public class StudentList implements List<Student> {
     }
 
     @Override
-    public boolean addAll(int i, Collection<? extends Student> collection) {
-        int counter = 0;
-        Iterator<? extends Student> it = collection.iterator();
-        while (it.hasNext()) {
-            Student student = it.next();
-            add(i + counter++, student);
-        }
-        return counter != 0;
+    public boolean addAll(int i, final Collection<? extends Student> collection) {
+        final Student[] students = collection.toArray(new Student[collection.size()]);
+        final Student[] afterIndex = removeNullsFromArray(Arrays.copyOfRange(elements, i + 1, elements.length - 1));
+
+        updateCapacity(collection.size() + size());
+        System.arraycopy(students, 0, elements, i + 1, students.length);
+        System.arraycopy(afterIndex, 0, elements, elements.length - 1, afterIndex.length);
+
+        sizeOfArray += collection.size();
+        modificationCounter++;
+        return containsAll(collection);
+    }
+
+    private <T> int getActualSizeOfArray(T[] array) {
+        return (int) Arrays.stream(array).filter(e -> e != null).count();
+    }
+
+    private Student[] removeNullsFromArray(Student[] array) {
+        return Arrays.stream(array).filter(e -> e != null).collect(Collectors.toList()).toArray(new Student[0]);
     }
 
     @Override
@@ -245,21 +269,18 @@ public class StudentList implements List<Student> {
     @Override
     public boolean retainAll(Collection<?> collection) {
         Objects.requireNonNull(collection);
-        Iterator<?> it = collection.iterator();
-        Student[] iteratorsList = (Student[]) collection.toArray();
+        int index = 0;
 
-        while (it.hasNext()) {
-            Student student = (Student) it.next();
-            for (Student st : elements) {
-                try {
-                    if (!st.equals(student) && Arrays.stream(iteratorsList).noneMatch(e -> e.equals(st))) {
-                        remove(st);
-                    }
-                } catch (NullPointerException e) {
-                }
+        while (index != elements.length & (elements.length != 0 || elements.length != collection.size())) {
+            if (!collection.contains(elements[index])) {
+                remove(elements[index]);
+            } else {
+                index++;
             }
         }
-        return iteratorsList.length == size();
+
+        sizeOfArray = getActualSizeOfArray(elements);
+        return collection.size() == size();
     }
 
     private class StudentItr implements ListIterator<Student> {
