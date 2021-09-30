@@ -235,7 +235,7 @@ public class StudentList implements List<Student> {
 
     @Override
     public boolean addAll(int i, final Collection<? extends Student> collection) {
-        final Student[] students = collection.toArray(new Student[collection.size()]);
+        final Student[] students = collection.toArray(new Student[0]);
         final Student[] afterIndex = removeNullsFromArray(Arrays.copyOfRange(elements, i + 1, elements.length - 1));
 
         updateCapacity(collection.size() + size());
@@ -248,19 +248,17 @@ public class StudentList implements List<Student> {
     }
 
     private <T> int getActualSizeOfArray(T[] array) {
-        return (int) Arrays.stream(array).filter(e -> e != null).count();
+        return (int) Arrays.stream(array).filter(Objects::nonNull).count();
     }
 
     private Student[] removeNullsFromArray(Student[] array) {
-        return Arrays.stream(array).filter(e -> e != null).collect(Collectors.toList()).toArray(new Student[0]);
+        return Arrays.stream(array).filter(Objects::nonNull).toArray(Student[]::new);
     }
 
     @Override
     public boolean removeAll(Collection<?> collection) {
         Objects.requireNonNull(collection);
-        Iterator<?> it = collection.iterator();
-        while (it.hasNext()) {
-            Object student = it.next();
+        for (Object student : collection) {
             remove(student);
         }
         return !containsAll(collection);

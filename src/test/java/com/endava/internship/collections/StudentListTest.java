@@ -30,19 +30,19 @@ import java.util.stream.Stream;
 class StudentListTest {
     private StudentList studentsList;
     private StudentList emptyList;
-    private static Student student1 = new Student("Bob1", LocalDate.parse("2020-01-01"), "Good student");
-    private static Student student2 = new Student("Bob2", LocalDate.parse("2020-01-02"), "Good student");
-    private static Student student3 = new Student("Bob3", LocalDate.parse("2020-01-03"), "Good student");
-    private static Student student4 = new Student("Bob4", LocalDate.parse("2020-01-04"), "Good student");
-    private static Student student5 = new Student("Bob5", LocalDate.parse("2020-01-05"), "Good student");
-    private static Student student6 = new Student("Bob6", LocalDate.parse("2020-01-06"), "Good student");
-    private static Student student7 = new Student("Bob7", LocalDate.parse("2020-01-07"), "Good student");
-    private static Student student8 = new Student("Bob8", LocalDate.parse("2020-01-08"), "Good student");
-    private static Student student9 = new Student("Bob9", LocalDate.parse("2020-01-09"), "Good student");
-    private static Student student10 = new Student("Bob10", LocalDate.parse("2020-01-10"), "Good student");
-    private static Student student11 = new Student("Bob11", LocalDate.parse("2020-01-11"), "Good student");
-    private static Student student12 = new Student("Bob12", LocalDate.parse("2020-01-12"), "Good student");
-    private static Student student0 = new Student("Jery", LocalDate.parse("2020-01-19"), "Best Student");
+    private static final Student student1 = new Student("Bob1", LocalDate.parse("2020-01-01"), "Good student");
+    private static final Student student2 = new Student("Bob2", LocalDate.parse("2020-01-02"), "Good student");
+    private static final Student student3 = new Student("Bob3", LocalDate.parse("2020-01-03"), "Good student");
+    private static final Student student4 = new Student("Bob4", LocalDate.parse("2020-01-04"), "Good student");
+    private static final Student student5 = new Student("Bob5", LocalDate.parse("2020-01-05"), "Good student");
+    private static final Student student6 = new Student("Bob6", LocalDate.parse("2020-01-06"), "Good student");
+    private static final Student student7 = new Student("Bob7", LocalDate.parse("2020-01-07"), "Good student");
+    private static final Student student8 = new Student("Bob8", LocalDate.parse("2020-01-08"), "Good student");
+    private static final Student student9 = new Student("Bob9", LocalDate.parse("2020-01-09"), "Good student");
+    private static final Student student10 = new Student("Bob10", LocalDate.parse("2020-01-10"), "Good student");
+    private static final Student student11 = new Student("Bob11", LocalDate.parse("2020-01-11"), "Good student");
+    private static final Student student12 = new Student("Bob12", LocalDate.parse("2020-01-12"), "Good student");
+    private static final Student student0 = new Student("Jery", LocalDate.parse("2020-01-19"), "Best Student");
 
     private static Stream<Arguments> studentsStream() {
         return Stream.of(
@@ -95,9 +95,8 @@ class StudentListTest {
     }
 
     private Object[] getArrayOfStudents() {
-        Object[] objects = {student1, student2, student3, student4, student5, student6, student7, student8,
+        return new Object[]{student1, student2, student3, student4, student5, student6, student7, student8,
                 student9, student10, student11, student12};
-        return objects;
     }
 
     @BeforeEach
@@ -288,7 +287,7 @@ class StudentListTest {
     @Test
     @DisplayName("Test lastIndexOf()")
     public void testLastIndexOf() {
-        assertEquals(studentsList.lastIndexOf(student2), studentsList.size() - studentsList.size() + 1);
+        assertEquals(studentsList.lastIndexOf(student2), 1);
     }
 
     @Test
@@ -368,9 +367,9 @@ class StudentListTest {
     @Test
     @DisplayName("Check throwing NoSuchElementException() of next() when cursor at the end of collection")
     public void checkExceptionOfNext() {
-        ListIterator iterator = studentsList.listIterator(studentsList.size() - 1);
+        ListIterator<Student> iterator = studentsList.listIterator(studentsList.size() - 1);
 
-        assertThrows(NoSuchElementException.class, () -> iterator.next());
+        assertThrows(NoSuchElementException.class, iterator::next);
     }
 
     @Test
@@ -398,22 +397,22 @@ class StudentListTest {
     @Test
     @DisplayName("Test throwing IndexOutOfBoundsException when no cursors index is wrong for previous()")
     public void testThrowingIndexOutOfBoundsExceptionWhenNoCursorsIndexIsWrongForPrevious() {
-        ListIterator iterator = studentsList.listIterator(0);
+        ListIterator<Student> iterator = studentsList.listIterator(0);
 
-        assertThrows(NoSuchElementException.class, () -> iterator.previous());
+        assertThrows(NoSuchElementException.class, iterator::previous);
     }
 
     @Test
     @DisplayName("Check the nextIndex() when it exist")
     public void checkTheNextIndexWhenItExist() {
-        ListIterator iterator = studentsList.listIterator(0);
+        ListIterator<Student> iterator = studentsList.listIterator(0);
         assertEquals(1, iterator.nextIndex());
     }
 
     @Test
     @DisplayName("Check the previousIndex() when it exist")
     public void checkThePreviousIndexWhenItExist() {
-        ListIterator iterator = studentsList.listIterator(1);
+        ListIterator<Student> iterator = studentsList.listIterator(1);
         assertEquals(0, iterator.previousIndex());
     }
 
@@ -421,7 +420,7 @@ class StudentListTest {
     @DisplayName("Check removing by iterator")
     public void checkRemovingByIterator() {
         emptyList.add(student0);
-        ListIterator iterator = emptyList.listIterator();
+        ListIterator<Student> iterator = emptyList.listIterator();
         iterator.remove();
 
         assertEquals(0, emptyList.size());
@@ -430,7 +429,7 @@ class StudentListTest {
     @Test
     @DisplayName("Check adding by iterator")
     public void checkAddingByIterator() {
-        ListIterator iterator = emptyList.listIterator();
+        ListIterator<Student> iterator = emptyList.listIterator();
         iterator.add(student0);
 
         assertEquals(1, emptyList.size());
@@ -440,7 +439,7 @@ class StudentListTest {
     @Test
     @DisplayName("Check setting by iterator")
     public void checkSettingByIterator() {
-        ListIterator iterator = studentsList.listIterator();
+        ListIterator<Student> iterator = studentsList.listIterator();
         iterator.set(student0);
 
         assertTrue(studentsList.contains(student0));
@@ -449,15 +448,15 @@ class StudentListTest {
     @Test
     @DisplayName("Check throwing ConcurrentModificationException by iterator while removing the last element")
     public void checkThrowingConcurrentModificationExceptionWhileRemovingTheLastElement() {
-        ListIterator iterator = emptyList.listIterator();
+        ListIterator<Student> iterator = emptyList.listIterator();
 
-        assertThrows(ConcurrentModificationException.class, () -> iterator.remove());
+        assertThrows(ConcurrentModificationException.class, iterator::remove);
     }
 
     @Test
     @DisplayName("Check iterator of iterator()")
     public void checkIteratorOfIterator() {
-        Iterator it = studentsList.iterator();
+        Iterator<Student> it = studentsList.iterator();
 
         assertTrue(it.hasNext());
         assertNotNull(it.next());
@@ -466,11 +465,9 @@ class StudentListTest {
     @Test
     @DisplayName("Test forEachRemaining() method of iterator")
     public void testForEachRemainingMethodOfIterator() {
-        Iterator it = studentsList.iterator();
+        Iterator<Student> it = studentsList.iterator();
         int sizeBeforeAction = studentsList.size();
-        it.forEachRemaining(n -> {
-            it.remove();
-        });
+        it.forEachRemaining(n -> it.remove());
 
         assertNotEquals(sizeBeforeAction, studentsList.size());
     }
@@ -478,19 +475,19 @@ class StudentListTest {
     @Test
     @DisplayName("Check throwing ConcurrentModificationException by iterator while removing")
     public void checkRemovingConcurrently() {
-        ListIterator iterator = studentsList.listIterator();
+        ListIterator<Student> iterator = studentsList.listIterator();
         createThreads(2000, studentsList, ThreadActions.ADD);
         createThreads(200, studentsList, ThreadActions.REMOVE);
         createThreads(2000, studentsList, ThreadActions.ADD_TO_INDEX);
         createThreads(100, studentsList, ThreadActions.REMOVE_BY_INDEX);
 
-        assertThrows(ConcurrentModificationException.class, () -> iterator.remove());
+        assertThrows(ConcurrentModificationException.class, iterator::remove);
     }
 
     @Test
     @DisplayName("Check throwing ConcurrentModificationException by iterator while adding")
     public void checkAddingConcurrently() {
-        ListIterator iterator = studentsList.listIterator();
+        ListIterator<Student> iterator = studentsList.listIterator();
         createThreads(2000, studentsList, ThreadActions.ADD);
         createThreads(400, studentsList, ThreadActions.REMOVE);
         createThreads(2000, studentsList, ThreadActions.ADD_TO_INDEX);
@@ -502,7 +499,7 @@ class StudentListTest {
     @Test
     @DisplayName("Check throwing ConcurrentModificationException by iterator while set")
     public void checkSetConcurrently() {
-        ListIterator iterator = studentsList.listIterator();
+        ListIterator<Student> iterator = studentsList.listIterator();
         createThreads(2000, studentsList, ThreadActions.ADD);
         createThreads(200, studentsList, ThreadActions.REMOVE);
         createThreads(2000, studentsList, ThreadActions.ADD_TO_INDEX);
