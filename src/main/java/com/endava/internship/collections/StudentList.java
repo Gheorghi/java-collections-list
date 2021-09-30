@@ -1,7 +1,15 @@
 package com.endava.internship.collections;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class StudentList implements List<Student> {
 
@@ -19,6 +27,7 @@ public class StudentList implements List<Student> {
     }
 
     public StudentList(Collection<? extends Student> studentsCollection) {
+        elements = new Student[sizeOfArray + studentsCollection.size()];
         addAll(studentsCollection);
     }
 
@@ -67,12 +76,12 @@ public class StudentList implements List<Student> {
     private void checkCapacity() {
         if (elements.length == size()) {
             int capacity = elements.length * 2;
-            updateCapacity(elements, capacity);
+            updateCapacity(capacity);
         }
     }
 
-    private void updateCapacity(Student[] students, int newSize) {
-        elements = Arrays.copyOf(students, newSize);
+    private void updateCapacity(int newSize) {
+        elements = Arrays.copyOf(elements, newSize);
     }
 
     @Override
@@ -122,8 +131,9 @@ public class StudentList implements List<Student> {
     @Override
     public void add(int i, final Student student) {
         checkIndex(i);
-        System.arraycopy(elements, i, elements, i + 1,size() - i);
-        elements[i]=student;
+        checkCapacity();
+        System.arraycopy(elements, i, elements, i + 1, size() - i);
+        elements[i] = student;
         sizeOfArray++;
         modificationCounter++;
     }
@@ -132,8 +142,13 @@ public class StudentList implements List<Student> {
     public Student remove(int i) {
         checkTheExistenceOfIndex(i);
         Student targetToRemove = get(i);
-        System.arraycopy(elements, i + 1, elements, i, size() - i + 1);
-        sizeOfArray--;
+
+        int numToShift = sizeOfArray - i - 1;
+        if (numToShift > 0) {
+            System.arraycopy(elements, i + 1, elements, i, numToShift);
+        }
+        elements[--sizeOfArray] = null;
+        elements = removeNullsFromArray(elements);
         modificationCounter++;
         return targetToRemove;
     }
@@ -191,7 +206,7 @@ public class StudentList implements List<Student> {
         return Arrays.asList(Arrays.copyOfRange(elements, i, i1));
     }
 
-    void subListRangeCheck(int from, int to, int arraySize) {
+    private void subListRangeCheck(int from, int to, int arraySize) {
         if (to > arraySize)
             throw new IndexOutOfBoundsException("to is: " + to);
         if (from > to)
@@ -211,26 +226,59 @@ public class StudentList implements List<Student> {
 
     @Override
     public boolean containsAll(Collection<?> collection) {
-        //Ignore this for homework
-        throw new UnsupportedOperationException();
+        for (Object e : collection)
+            if (!contains(e)) {
+                return false;
+            }
+        return true;
     }
 
     @Override
-    public boolean addAll(int i, Collection<? extends Student> collection) {
-        //Ignore this for homework
-        throw new UnsupportedOperationException();
+    public boolean addAll(int i, final Collection<? extends Student> collection) {
+        final Student[] students = collection.toArray(new Student[0]);
+        final Student[] afterIndex = removeNullsFromArray(Arrays.copyOfRange(elements, i + 1, elements.length - 1));
+
+        updateCapacity(collection.size() + size());
+        System.arraycopy(students, 0, elements, i + 1, students.length);
+        System.arraycopy(afterIndex, 0, elements, elements.length - 1, afterIndex.length);
+
+        sizeOfArray += collection.size();
+        modificationCounter++;
+        return containsAll(collection);
+    }
+
+    private <T> int getActualSizeOfArray(T[] array) {
+        return (int) Arrays.stream(array).filter(Objects::nonNull).count();
+    }
+
+    private Student[] removeNullsFromArray(Student[] array) {
+        return Arrays.stream(array).filter(Objects::nonNull).toArray(Student[]::new);
     }
 
     @Override
     public boolean removeAll(Collection<?> collection) {
-        //Ignore this for homework
-        throw new UnsupportedOperationException();
+        Objects.requireNonNull(collection);
+        for (Object student : collection) {
+            remove(student);
+        }
+        return !containsAll(collection);
     }
 
     @Override
     public boolean retainAll(Collection<?> collection) {
-        //Ignore this for homework
-        throw new UnsupportedOperationException();
+        Objects.requireNonNull(collection);
+        int index = 0;
+
+        while (index != elements.length & (elements.length != 0 || elements.length != collection.size())) {
+            if (!collection.contains(elements[index])) {
+                remove(elements[index]);
+            } else {
+                index++;
+            }
+        }
+
+        sizeOfArray = getActualSizeOfArray(elements);
+        return collection.size() == size();
     }
 
     private class StudentItr implements ListIterator<Student> {
@@ -259,7 +307,8 @@ public class StudentList implements List<Student> {
             checkIfNoActionsMade();
             try {
                 hasNext();
-                return elements[cursor + 1];
+                ++cursor;
+                return elements[cursor];
             } catch (IndexOutOfBoundsException e) {
                 throw new NoSuchElementException();
             }
@@ -280,7 +329,8 @@ public class StudentList implements List<Student> {
             checkIfNoActionsMade();
             try {
                 hasPrevious();
-                return elements[cursor - 1];
+                --cursor;
+                return elements[cursor];
             } catch (IndexOutOfBoundsException e) {
                 throw new NoSuchElementException();
             }
